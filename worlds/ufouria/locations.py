@@ -8,7 +8,7 @@ from worlds.generic.Rules import set_rule
 
 from .names.locations import l
 from .names.regions import r
-from .rules import Rule, And, Or, can_bomb, can_swim, can_dive, can_climb, can_walk_on_ice, can_hover, can_shoot
+from .rules import Rule, And, Or, can_bomb, can_swim, can_dive, can_climb, can_walk_on_ice, can_hover, can_shoot, can_freeze
 
 if TYPE_CHECKING:
     from .world import UfouriaWorld
@@ -103,8 +103,8 @@ locations: dict[str, tuple[str, None | Rule]] = {
     l.faucet_area_above_faucet_cave: (r.faucet_north, can_climb),
     l.snow_area_above_chimney: (r.snow_area, can_climb),
     l.snow_area_miniboss_reward: (r.snow_area, And(can_climb, can_walk_on_ice)),
-    l.lava_challenge_climbing_ice: (r.lava_challenge, And(can_hover, can_climb)),
-    l.lava_challenge_miniboss_reward: (r.lava_challenge, And(can_hover, can_shoot, can_climb)),
+    l.lava_challenge_climbing_ice: (r.lava_challenge, And(can_hover, can_climb, can_freeze)),
+    l.lava_challenge_miniboss_reward: (r.lava_challenge, And(can_hover, can_shoot, can_climb, can_freeze)),
     l.east_vertical_shaft_hover_chest: (r.east_vertical_shaft, can_hover),
     l.east_vertical_shaft_by_long_drop: (r.east_vertical_shaft, None),
     l.clouds_area_miniboss_reward: (r.clouds, can_climb),

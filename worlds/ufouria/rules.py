@@ -22,21 +22,25 @@ class Rule:
 
 
 class Or(Rule):
-    def __init__(self, rule1: Rule, rule2: Rule):
-        self.rule1 = rule1
-        self.rule2 = rule2
+    def __init__(self, *rules):
+        self.rules = rules
 
     def resolve(self, world, state) -> bool:
-        return self.rule1.resolve(world, state) or self.rule2.resolve(world, state)
+        return any(
+            rule.resolve(world, state)
+            for rule in self.rules
+        )
     
 
 class And(Rule):
-    def __init__(self, rule1: Rule, rule2: Rule):
-        self.rule1 = rule1
-        self.rule2 = rule2
+    def __init__(self, *rules):
+        self.rules = rules
 
     def resolve(self, world, state) -> bool:
-        return self.rule1.resolve(world, state) and self.rule2.resolve(world, state)
+        return all(
+            rule.resolve(world, state)
+            for rule in self.rules
+        )
 
 
 class TrueRule(Rule):
@@ -87,10 +91,10 @@ class CanBomb(Rule):
 can_bomb = CanBomb()
 
 
-# class CanFreeze(Rule):
-#     def resolve(self, world, state):
-#         return state.has_all((i.freeon, i.snowman_icon), world.player)
-# can_freeze = CanFreeze()
+class CanFreeze(Rule):
+    def resolve(self, world, state):
+        return state.has_all((i.freeon, i.snowman_icon), world.player)
+can_freeze = CanFreeze()
 
 
 class CanShootHead(Rule):
