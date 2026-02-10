@@ -1,0 +1,28 @@
+class ItemNames:
+    red_key = "Red Key"
+    green_key = "Green Key"
+    blue_key = "Blue Key"
+    medicine = "Medicine"
+    water_of_life = "Water of Life"
+    freeon = "Freeon"
+    shades = "Shades"
+    gil = "Gil"
+    star_icon = "Star Icon"
+    snowman_icon = "Snowman Icon"
+    hammer_icon = "Hammer Icon"
+    bomb_icon = "Bomb Icon"
+    suction = "Suction"
+    life_container_1 = "Life Container 1"
+    life_container_2 = "Life Container 2"
+    life_container_3 = "Life Container 3"
+    life_container_4 = "Life Container 4"
+    crystal = "Crystal"
+    map = "Map"
+    compass = "Compass"
+    red_power_ring = "Red Power Ring"
+    green_power_ring = "Green Power Ring"
+    blue_power_ring = "Blue Power Ring"
+    power_of_insight = "Power of Insight"
+
+
+i = ItemNames()
