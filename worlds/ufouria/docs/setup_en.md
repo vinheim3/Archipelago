@@ -11,7 +11,8 @@ As we are using Bizhawk, this guide is only applicable to Windows and Linux syst
   - Detailed installation instructions for Bizhawk can be found at the above link.
   - Windows users must run the prerequisite installer first, which can also be found at the above link.
 - The built-in Bizhawk client, which can be installed [here](https://github.com/ArchipelagoMW/Archipelago/releases)
-- An EU copy of Ufouria
+- An EU copy of Ufouria (in a hex editor, combine the following 16 bytes with your dumped Ufouria PRG rom and your dumped Ufouria CHR rom):
+  - 4E 45 53 1A 08 10 40 08 00 00 00 00 01 00 00 01
 
 ## Configuring your YAML file
 
