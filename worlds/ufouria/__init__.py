@@ -1,5 +1,5 @@
 from BaseClasses import Tutorial
-from AutoWorld import WebWorld
+from worlds.AutoWorld import WebWorld
 
 from .client import UfouriaClient
 from .world import UfouriaWorld
