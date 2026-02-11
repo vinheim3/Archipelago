@@ -36,9 +36,7 @@ LEN_LOCATIONS_CHECKED = 9
 class UfouriaClient(BizHawkClient):
     system = "NES"
     game = "Ufouria"
-    # todo: the patch will automate the single patch required for the game
-    # to work with archipelago
-    # patch_suffix = ".apufouria"
+    patch_suffix = ".apufouria"
 
     def __init__(self):
         self.wram = "RAM"
