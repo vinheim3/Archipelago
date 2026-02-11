@@ -25,16 +25,16 @@ class ItemData:
 
 
 items = [
-    ItemData(1, i.red_key, ItemClassification.progression, global_flag=0x07),
-    ItemData(2, i.green_key, ItemClassification.progression, global_flag=0x06),
-    ItemData(3, i.blue_key, ItemClassification.progression, global_flag=0x05),
+    ItemData(1, i.red_key, ItemClassification.progression_skip_balancing, global_flag=0x07),
+    ItemData(2, i.green_key, ItemClassification.progression_skip_balancing, global_flag=0x06),
+    ItemData(3, i.blue_key, ItemClassification.progression_skip_balancing, global_flag=0x05),
     ItemData(4, i.medicine, ItemClassification.filler, global_flag=0x36),
     ItemData(5, i.water_of_life, ItemClassification.useful, global_flag=0x37),
     ItemData(6, i.freeon, ItemClassification.progression, global_flag=0x08),
     ItemData(7, i.shades, ItemClassification.progression, global_flag=0x09),
     ItemData(8, i.gil, ItemClassification.progression, global_flag=0x0a),
     ItemData(9, i.star_icon, ItemClassification.progression, global_flag=0x39),
-    ItemData(10, i.snowman_icon, ItemClassification.useful, global_flag=0x01),
+    ItemData(10, i.snowman_icon, ItemClassification.progression, global_flag=0x01),
     ItemData(11, i.hammer_icon, ItemClassification.progression, global_flag=0x02),
     ItemData(12, i.bomb_icon, ItemClassification.progression, global_flag=0x03),
     ItemData(13, i.suction, ItemClassification.progression, global_flag=0x04),
