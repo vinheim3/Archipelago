@@ -6,10 +6,28 @@ from pkgutil import get_data
 import bsdiff4
 
 import settings
-from worlds.AutoWorld import World
+from BaseClasses import Tutorial
+from worlds.AutoWorld import World, WebWorld
 
 from . import items, regions, locations, rules
 from .rom import UfouriaDeltaPatch, get_base_rom_path
+
+
+class AP_UfouriaWebWorld(WebWorld):
+    options_page = False
+    theme = 'partyTime'
+
+    setup_en = Tutorial(
+        tutorial_name='Setup Guide',
+        description='A guide to playing Ufouria',
+        language='English',
+        file_name='setup_en.md',
+        link='setup/en',
+        authors=['vinheim3']
+    )
+    
+    tutorials = [setup_en]
+    game_info_languages = ["en"]
 
 
 class UfouriaSettings(settings.Group):
@@ -37,6 +55,7 @@ class UfouriaSettings(settings.Group):
 class UfouriaWorld(World):
     game = "Ufouria"
     settings: typing.ClassVar[UfouriaSettings]
+    web = AP_UfouriaWebWorld()
 
     location_name_to_id = locations.LOCATION_NAME_TO_ID
     item_name_to_id = items.ITEM_NAME_TO_ID
