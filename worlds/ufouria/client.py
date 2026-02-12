@@ -20,8 +20,7 @@ UFOURIA_STR = bytes([0x1e, 0x0f, 0x18, 0x1e, 0x1b, 0x12, 0xa])
 
 # RAM locations
 SCANLINE_IRQ_SETUP = 0x28
-FIRST_ENTITY_ID_LOADED = 0x408
-GOAL_FLAG = 0x46a
+GOAL_FLAG = 0x0020
 GLOBAL_FLAGS = 0x4e0
 ITEMS_RECEIVED = 0x0001
 LOCATIONS_CHECKED = 0x0002 # 9 values
@@ -105,11 +104,10 @@ class UfouriaClient(BizHawkClient):
         
         writes = []
 
-        scanline_irq_setup, first_entity_id_loaded, goal_flag, global_flags, items_received, locations_checked, custom_text_pending = (
+        scanline_irq_setup, goal_flag, global_flags, items_received, locations_checked, custom_text_pending = (
             await bizhawk.read(ctx.bizhawk_ctx, [
                 (SCANLINE_IRQ_SETUP, 1, self.wram),
-                (FIRST_ENTITY_ID_LOADED, 1, self.wram),
-                (GOAL_FLAG, 1, self.wram),
+                (GOAL_FLAG, 1, self.sram),
                 (GLOBAL_FLAGS, 0x20, self.wram),
                 (ITEMS_RECEIVED, 1, self.sram),
                 (LOCATIONS_CHECKED, LEN_LOCATIONS_CHECKED, self.sram),
@@ -123,7 +121,7 @@ class UfouriaClient(BizHawkClient):
         
         # Handle goal - entity 0x11 is the final boss, and 0x10
         # is set on this ram address when the boss is about to explode
-        if first_entity_id_loaded[0] == 0x11 and goal_flag[0] == 0x10:
+        if goal_flag[0] == 0x69:
             await ctx.send_msgs([{
                 "cmd": "StatusUpdate",
                 "status": ClientStatus.CLIENT_GOAL
