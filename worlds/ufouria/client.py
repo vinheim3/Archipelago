@@ -23,14 +23,49 @@ SCANLINE_IRQ_SETUP = 0x28
 FIRST_ENTITY_ID_LOADED = 0x408
 GOAL_FLAG = 0x46a
 GLOBAL_FLAGS = 0x4e0
-LOCATIONS_CHECKED = 0x7f0  # todo: check if truly free
-ITEMS_RECEIVED = 0x7ff # todo: check if truly free
+ITEMS_RECEIVED = 0x0001
+LOCATIONS_CHECKED = 0x0002 # 9 values
+CUSTOM_TEXT_PENDING = 0x0010
+CUSTOM_TEXT = 0x0011
 
 # todo: Could be more optimized, but the global flags set for chests are
 # in the ranges $01-$0a, $10-$13, $30-$39 excluding $36 to $37,
 # and $e0 to $e5 excluding $e2
 # so we just reserve 9 * 8 bytes = $48 ($e0-$e5 are in the last 8 bytes)
 LEN_LOCATIONS_CHECKED = 9
+
+
+text_mapping = {
+    ".": 0x24,
+    ",": 0x25,
+    "'": 0x26,
+    ";": 0x27,
+    "!": 0x28,
+    "?": 0x29,
+    "-": 0x2a,
+    "(": 0x7a,
+    ")": 0x7b,
+    " ": 0x7c,
+}
+for i in range(ord('0'), ord('9')+1):
+    text_mapping[chr(i)] = i + 0x00 - ord('0')
+for i in range(ord('A'), ord('Z')+1):
+    text_mapping[chr(i)] = i + 0x0a - ord('A')
+
+
+def convert_text_to_ufouria_message(text: str) -> list[int]:
+    string = []
+    lines = text.splitlines()
+    last_line_idx = len(lines) - 1
+    for idx, line in enumerate(lines):
+        string.extend(text_mapping.get(ch, text_mapping["?"]) for ch in line[:21])
+        if idx == last_line_idx:
+            string.append(0xff)
+        elif idx % 4 == 3:
+            string.append(0xfe)
+        else:
+            string.append(0xfd)
+    return string
 
 
 class UfouriaClient(BizHawkClient):
@@ -41,6 +76,9 @@ class UfouriaClient(BizHawkClient):
     def __init__(self):
         self.wram = "RAM"
         self.rom = "PRG ROM"
+        self.sram = "WRAM"
+        self.pending_messages: list[list[int]] = []
+        self.messaged_about_location: set[int] = set()
 
     async def validate_rom(self, ctx):
         # UFOURIA in the game's ascii decoding
@@ -67,14 +105,15 @@ class UfouriaClient(BizHawkClient):
         
         writes = []
 
-        scanline_irq_setup, first_entity_id_loaded, goal_flag, global_flags, locations_checked, items_received = (
+        scanline_irq_setup, first_entity_id_loaded, goal_flag, global_flags, items_received, locations_checked, custom_text_pending = (
             await bizhawk.read(ctx.bizhawk_ctx, [
                 (SCANLINE_IRQ_SETUP, 1, self.wram),
                 (FIRST_ENTITY_ID_LOADED, 1, self.wram),
                 (GOAL_FLAG, 1, self.wram),
                 (GLOBAL_FLAGS, 0x20, self.wram),
-                (LOCATIONS_CHECKED, LEN_LOCATIONS_CHECKED, self.wram),
-                (ITEMS_RECEIVED, 1, self.wram),
+                (ITEMS_RECEIVED, 1, self.sram),
+                (LOCATIONS_CHECKED, LEN_LOCATIONS_CHECKED, self.sram),
+                (CUSTOM_TEXT_PENDING, 1, self.sram),
             ])
         )
 
@@ -99,10 +138,10 @@ class UfouriaClient(BizHawkClient):
                 flag_byte_offset, flag_bit = global_flag // 8, global_flag % 8
                 curr_val = global_flags[flag_byte_offset]
                 new_val = curr_val | (1 << flag_bit)
-                writes.append((GLOBAL_FLAGS + flag_byte_offset, new_val.to_bytes(1, 'little'), "RAM"))
+                writes.append((GLOBAL_FLAGS + flag_byte_offset, new_val.to_bytes(1, 'little'), self.wram))
 
             recv_amount += 1
-            writes.append((ITEMS_RECEIVED, recv_amount.to_bytes(1, 'little'), "RAM"))
+            writes.append((ITEMS_RECEIVED, recv_amount.to_bytes(1, 'little'), self.sram))
 
         # Sync back locations checked from the server
         # eg in case the game is restarted
@@ -116,7 +155,13 @@ class UfouriaClient(BizHawkClient):
                     if location_id in ctx.checked_locations:
                         new_byte |= (1 << bit)
             if location_checked_byte != new_byte:
-                writes.append((LOCATIONS_CHECKED + byte_offset, new_byte.to_bytes(1, 'little'), "RAM"))
+                writes.append((LOCATIONS_CHECKED + byte_offset, new_byte.to_bytes(1, 'little'), self.sram))
+
+        # Handle storing a custom message to be displayed in-game
+        if self.pending_messages and custom_text_pending[0] == 0:
+            msg = self.pending_messages.pop()
+            writes.append((CUSTOM_TEXT, bytes(msg), self.sram))
+            writes.append((CUSTOM_TEXT_PENDING, 0x69.to_bytes(1, 'little'), self.sram))
 
         if writes:
             await write(ctx.bizhawk_ctx, writes)
@@ -147,3 +192,19 @@ class UfouriaClient(BizHawkClient):
                 f'New Check: {location} ({len(ctx.locations_checked)}/'
                 f'{len(ctx.missing_locations) + len(ctx.checked_locations)})')
             await ctx.send_msgs([{"cmd": 'LocationChecks', "locations": [new_check_id]}])
+            await ctx.send_msgs([{"cmd": 'LocationScouts', "locations": [new_check_id], "create_as_hint": 0}])
+
+    def on_package(self, ctx, cmd, args) -> None:
+        if cmd == "LocationInfo":
+            for location, network_item in ctx.locations_info.items():
+                if location in self.messaged_about_location:
+                    continue
+                self.messaged_about_location.add(location)
+                if network_item.player == ctx.slot:
+                    item_name = ctx.item_names.lookup_in_game(network_item.item)
+                    msg = f"Found your\n{item_name}"
+                else:
+                    game = ctx.slot_info[network_item.player][1]
+                    item_name = ctx.item_names.lookup_in_game(network_item.item, game)
+                    msg = f"Sent\n{item_name}\nto\n{ctx.player_names[network_item.player]}"
+                self.pending_messages.append(convert_text_to_ufouria_message(msg.upper()))
