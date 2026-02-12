@@ -55,7 +55,7 @@ for i in range(ord('A'), ord('Z')+1):
 
 def convert_text_to_ufouria_message(text: str) -> list[int]:
     string = []
-    lines = text.splitlines()
+    lines = text.upper().splitlines()
     last_line_idx = len(lines) - 1
     for idx, line in enumerate(lines):
         string.extend(text_mapping.get(ch, text_mapping["?"]) for ch in line[:21])
@@ -131,7 +131,7 @@ class UfouriaClient(BizHawkClient):
 
         # Handle receiving items
         recv_amount = items_received[0]
-        if recv_amount < len(ctx.items_received):
+        if recv_amount < len(ctx.items_received) and custom_text_pending[0] == 0:
             item: NetworkItem = ctx.items_received[recv_amount]
             ufouria_item = ITEM_ID_TO_ITEM[item.item]
             if global_flag := ufouria_item.global_flag:
@@ -142,6 +142,13 @@ class UfouriaClient(BizHawkClient):
 
             recv_amount += 1
             writes.append((ITEMS_RECEIVED, recv_amount.to_bytes(1, 'little'), self.sram))
+
+            if item.player != ctx.slot:
+                item_name = ctx.item_names.lookup_in_game(item.item)
+                msg = f"Received\n{item_name}\nfrom\n{ctx.player_names[item.player]}"
+                msg_bytes = convert_text_to_ufouria_message(msg)
+                writes.append((CUSTOM_TEXT, bytes(msg_bytes), self.sram))
+                writes.append((CUSTOM_TEXT_PENDING, 0x69.to_bytes(1, 'little'), self.sram))
 
         # Sync back locations checked from the server
         # eg in case the game is restarted
@@ -159,8 +166,8 @@ class UfouriaClient(BizHawkClient):
 
         # Handle storing a custom message to be displayed in-game
         if self.pending_messages and custom_text_pending[0] == 0:
-            msg = self.pending_messages.pop()
-            writes.append((CUSTOM_TEXT, bytes(msg), self.sram))
+            msg_bytes = self.pending_messages.pop()
+            writes.append((CUSTOM_TEXT, bytes(msg_bytes), self.sram))
             writes.append((CUSTOM_TEXT_PENDING, 0x69.to_bytes(1, 'little'), self.sram))
 
         if writes:
@@ -207,4 +214,4 @@ class UfouriaClient(BizHawkClient):
                     game = ctx.slot_info[network_item.player][1]
                     item_name = ctx.item_names.lookup_in_game(network_item.item, game)
                     msg = f"Sent\n{item_name}\nto\n{ctx.player_names[network_item.player]}"
-                self.pending_messages.append(convert_text_to_ufouria_message(msg.upper()))
+                self.pending_messages.append(convert_text_to_ufouria_message(msg))
