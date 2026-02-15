@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .names.items import i
+from .names.regions import r
 
 if TYPE_CHECKING:
     from .world import UfouriaWorld
@@ -13,7 +14,9 @@ def set_all_rules(world: UfouriaWorld) -> None:
 
 
 def set_completion_condition(world: UfouriaWorld) -> None:
-    world.multiworld.completion_condition[world.player] = lambda state: state.has_all((i.red_key, i.blue_key, i.green_key), world.player)
+    world.multiworld.completion_condition[world.player] = \
+        lambda state: state.has_all((i.red_key, i.blue_key, i.green_key), world.player) and \
+            state.can_reach_region(r.final_boss_corridor, world.player)
 
 
 class Rule:
